@@ -4,11 +4,11 @@ __pycache__/
 *$py.class
 
 # Data
-data/
-results/
-*.csv
-*.png
-*.pth
+# data/
+# results/
+# *.csv
+# *.png
+# *.pth
 
 # Environment
 .env
