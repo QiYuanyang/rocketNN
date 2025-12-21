@@ -12,8 +12,11 @@ warnings.filterwarnings("ignore")
 os.makedirs("data", exist_ok=True)
 
 def run_simulation(num_simulations=100):
-    results = []
-    
+    output_file = "data/flight_data.csv"
+    # Start fresh to avoid appending to old data
+    if os.path.exists(output_file):
+        os.remove(output_file)
+        
     print(f"Starting {num_simulations} simulations with Standard Calisto-like Rocket...")
     
     # Define Standard Motor Thrust Curve (Cesaroni M1670-like)
@@ -102,7 +105,7 @@ def run_simulation(num_simulations=100):
         flight = Flight(rocket=rocket, environment=env, rail_length=5.2, inclination=inclination, heading=heading, terminate_on_apogee=False)
         
         # --- 4. Results ---
-        results.append({
+        result = {
             "surface_wind_speed": surface_wind,
             "wind_direction": wind_direction,
             "shear_exponent": shear_exponent,
@@ -114,8 +117,13 @@ def run_simulation(num_simulations=100):
             "landing_x": flight.x(flight.t_final),
             "landing_y": flight.y(flight.t_final),
             "flight_time": flight.t_final
-        })
+        }
         
+        # Save incrementally to avoid memory issues
+        df_row = pd.DataFrame([result])
+        df_row.to_csv(output_file, mode='a', header=not os.path.exists(output_file), index=False)
+        
+    print("Data generation complete.")
     df = pd.DataFrame(results)
     df.to_csv("data/flight_data.csv", index=False)
     print("Data generation complete.")
