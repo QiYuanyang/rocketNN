@@ -21,7 +21,7 @@ def denormalize_data(data, mean, std):
 
 @torch.no_grad()
 def evaluate_models(models, test_loader, device, stats):
-    """Evaluate models on test set and compute real-world metrics."""
+    """Evaluate models with soft phase blending."""
     
     for model in models:
         model.eval()
@@ -36,34 +36,33 @@ def evaluate_models(models, test_loader, device, stats):
         time = batch['time'].to(device)
         position_true = batch['position'].to(device)
         velocity_true = batch['velocity'].to(device)
+        acceleration_true = batch['acceleration'].to(device)
         
         batch_size, n_points = time.shape
         
-        # Get apogee times
-        apogee_times = time[:, n_points // 2].cpu().numpy()
-        
-        # Classify phases
-        phase_masks = []
+        # Compute soft phase weights
+        phase_weights_batch = []
         for b in range(batch_size):
             time_b = time[b].cpu().numpy()
-            velocity_b = velocity_true[b].cpu().numpy()
-            phases = PhaseClassifier.classify_phases(time_b, velocity_b, apogee_times[b])
-            phase_masks.append(phases)
-        phase_masks = np.array(phase_masks)
+            pos_b = position_true[b].cpu().numpy()
+            vel_b = velocity_true[b].cpu().numpy()
+            acc_b = acceleration_true[b].cpu().numpy()
+            
+            weights = PhaseClassifier.classify_phases(time_b, pos_b, vel_b, acc_b)
+            phase_weights_batch.append(weights)
         
-        # Forward pass
+        phase_weights = torch.from_numpy(np.array(phase_weights_batch)).float().to(device)
+        
+        # Forward pass with soft blending
         position_pred = torch.zeros_like(position_true)
         velocity_pred = torch.zeros_like(velocity_true)
         
         for phase_idx, model in enumerate(models):
-            mask = torch.from_numpy(phase_masks == phase_idx).to(device)
-            if mask.sum() == 0:
-                continue
-            
             pos_pred, vel_pred = model(time, params)
-            mask_expanded = mask.unsqueeze(-1).float()
-            position_pred += pos_pred * mask_expanded
-            velocity_pred += vel_pred * mask_expanded
+            
+            weights = phase_weights[:, :, phase_idx].unsqueeze(-1)
+            position_pred += pos_pred * weights
+            velocity_pred += vel_pred * weights
         
         # Denormalize predictions and ground truth
         pos_true_denorm = denormalize_data(
