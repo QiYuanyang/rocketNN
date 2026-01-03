@@ -1,0 +1,47 @@
+{
+  "num_trajectories": 2000,
+  "points_per_trajectory": 100,
+  "parameter_ranges": {
+    "payload_mass": [
+      2.0,
+      6.0
+    ],
+    "motor_impulse_scale": [
+      0.95,
+      1.05
+    ],
+    "surface_wind_speed": [
+      0.0,
+      15.0
+    ],
+    "wind_direction": [
+      0.0,
+      360.0
+    ],
+    "shear_exponent": [
+      0.1,
+      0.3
+    ],
+    "launch_inclination": [
+      80.0,
+      90.0
+    ],
+    "launch_heading": [
+      0.0,
+      360.0
+    ]
+  },
+  "rocket_config": {
+    "base_dry_mass": 14.0,
+    "radius": 0.0635,
+    "drag_coefficient": 0.45,
+    "motor_type": "Cesaroni M1670-like",
+    "burn_time": 5.0
+  },
+  "environment": {
+    "latitude": 32.990254,
+    "longitude": -106.974998,
+    "elevation": 1400.0,
+    "date": "2025-12-10"
+  }
+}
